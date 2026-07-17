@@ -75,7 +75,7 @@ const $bar = document.getElementById("pbar");
 const $who = document.getElementById("whoami");
 const TOTAL_STEPS = 18;
 const WA_PHONE = "50242182300";
-const SHEETS_ENDPOINT="PEGA_AQUI_LA_URL_DEL_APPS_SCRIPT"; /* URL /exec del Web App de Google Apps Script */
+const SHEETS_ENDPOINT="https://script.google.com/macros/s/AKfycbzvdaLNSBK05LkTLfg1ggBptKA3FY2juZkbFdMe4hpuzzqxZ9QiXMxJGu07hIApXUmJ/exec"; /* URL /exec del Web App de Google Apps Script */
 let examAnswersLog=[];
 function logToSheets(payload){
   if(!SHEETS_ENDPOINT || SHEETS_ENDPOINT.indexOf("PEGA_AQUI")===0) return;
