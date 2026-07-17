@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen · Anfitrión de Petén</title>
+<style>
+  :root{
+    --green:#1F6B4A; --dark:#143D2B; --moss:#97BC62; --tint:#EDF5F0;
+    --gold:#C4942A; --ink:#26332C; --gray:#5A6B61; --red:#B0413E;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Segoe UI', Arial, sans-serif; background:var(--tint); color:var(--ink); min-height:100vh;}
+  .wrap{max-width:760px; margin:0 auto; padding:16px;}
+  header{background:var(--dark); color:#fff; padding:14px 16px; position:sticky; top:0; z-index:10;}
+  header .hwrap{max-width:760px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  header h1{font-size:15px; font-weight:600;}
+  header .who{font-size:12px; color:#CFE5D8;}
+  .progress{height:6px; background:#0e2e20; border-radius:3px; overflow:hidden; margin-top:8px;}
+  .progress>div{height:100%; background:var(--gold); width:0%; transition:width .4s;}
+  .card{background:#fff; border-radius:14px; padding:22px; margin:16px 0; box-shadow:0 2px 10px rgba(0,0,0,.08);}
+  .card h2{color:var(--green); font-size:21px; margin-bottom:10px;}
+  .card h3{color:var(--green); font-size:16px; margin:14px 0 6px;}
+  .card p{font-size:15px; line-height:1.55; margin-bottom:10px;}
+  .card ul{margin:0 0 10px 20px; font-size:15px; line-height:1.6;}
+  .tag{display:inline-block; background:var(--tint); color:var(--green); font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; margin-bottom:10px;}
+  .btn{display:inline-block; background:var(--green); color:#fff; border:none; font-size:16px; font-weight:600; padding:13px 26px; border-radius:10px; cursor:pointer; margin-top:8px;}
+  .btn:active{transform:scale(.98);}
+  .btn.sec{background:#fff; color:var(--green); border:2px solid var(--green);}
+  .btn:disabled{opacity:.45; cursor:default;}
+  .opt{display:block; width:100%; text-align:left; background:var(--tint); border:2px solid transparent; border-radius:10px; padding:13px 15px; font-size:15px; margin:8px 0; cursor:pointer; color:var(--ink);}
+  .opt:hover{border-color:var(--moss);}
+  .opt.ok{background:#E3F2E8; border-color:var(--green); font-weight:600;}
+  .opt.bad{background:#F7E6E5; border-color:var(--red);}
+  .feedback{border-radius:10px; padding:12px 14px; font-size:14px; margin-top:10px; display:none;}
+  .feedback.ok{background:#E3F2E8; color:var(--green); display:block;}
+  .feedback.bad{background:#F7E6E5; color:var(--red); display:block;}
+  .center{text-align:center;}
+  .big{font-size:44px; font-weight:800; color:var(--green);}
+  .cap{font-size:12px; color:var(--gray); text-transform:uppercase; letter-spacing:1px;}
+  table{width:100%; border-collapse:collapse; font-size:14px; margin:10px 0;}
+  th{background:var(--green); color:#fff; text-align:left; padding:8px 10px;}
+  td{padding:8px 10px; border-bottom:1px solid #DCE8E1;}
+  tr:nth-child(even) td{background:var(--tint);}
+  .timer{font-size:38px; font-weight:800; color:var(--gold); text-align:center; margin:6px 0;}
+  .timer.warn{color:var(--red);}
+  .pill{display:flex; justify-content:space-between; background:var(--tint); border-radius:10px; padding:11px 15px; margin:7px 0; font-size:15px;}
+  .pill b{color:var(--green);}
+  .score-ok{color:var(--green); font-weight:700;}
+  .score-mid{color:var(--gold); font-weight:700;}
+  .score-low{color:var(--red); font-weight:700;}
+  .quote{border-left:4px solid var(--gold); padding:10px 14px; font-style:italic; color:var(--gray); background:var(--tint); border-radius:0 10px 10px 0; margin:12px 0; font-size:14px;}
+  .journey{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0;}
+  .jstep{background:var(--green); color:#fff; border-radius:8px; padding:6px 9px; font-size:12.5px; font-weight:600;}
+  .jstep span{background:#fff; color:var(--green); border-radius:50%; padding:1px 6px; margin-right:5px; font-size:11px;}
+  footer{text-align:center; font-size:12px; color:var(--gray); padding:18px 0 30px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <h1>🌿 Anfitrión de Petén · Capacitación</h1>
+    <div class="who" id="whoami"></div>
+  </div>
+  <div class="hwrap"><div class="progress" style="flex:1"><div id="pbar"></div></div></div>
+</header>
+<div class="wrap" id="app"></div>
+<footer>Corpetur · Hoteles de Petén · Capacitación interactiva · 2026</footer>
+
+<script>
+"use strict";
+const state = { name:"", step:0, scores:{}, totals:{}, flash:{ok:0,total:0} };
+const $app = document.getElementById("app");
+const $bar = document.getElementById("pbar");
+const $who = document.getElementById("whoami");
+const TOTAL_STEPS = 18;
+const WA_PHONE = "50242182300";
+const SHEETS_ENDPOINT="PEGA_AQUI_LA_URL_DEL_APPS_SCRIPT"; /* URL /exec del Web App de Google Apps Script */
+let examAnswersLog=[];
+function logToSheets(payload){
+  if(!SHEETS_ENDPOINT || SHEETS_ENDPOINT.indexOf("PEGA_AQUI")===0) return;
+  try{
+    fetch(SHEETS_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+  }catch(e){/* guardado silencioso, no interrumpe al participante */}
+}
+
+function setProgress(){ $bar.style.width = Math.min(100, Math.round(state.step/TOTAL_STEPS*100)) + "%"; }
+function go(html){ $app.innerHTML = html; window.scrollTo({top:0,behavior:"smooth"}); setProgress(); }
+function addScore(mod, ok){ state.scores[mod]=(state.scores[mod]||0)+(ok?1:0); state.totals[mod]=(state.totals[mod]||0)+1; }
+
+const MODULES = [
+{ id:"m1", n:1, titulo:"Conoce el destino Petén", tag:"Competencia 1",
+  contenido:`
+  <p><b>¿Dónde estamos?</b> Petén es el departamento más grande de Guatemala, en el corazón del Mundo Maya. Nuestra cabecera es <b>Flores</b>, una isla en el lago Petén Itzá unida a Santa Elena por un puente. Gran parte del territorio es la <b>Reserva de la Biosfera Maya</b>. La Isla de Flores fue declarada <b>Patrimonio Cultural y Conjunto Histórico</b> de Guatemala. Está a <b>45 minutos en avión</b> de la Ciudad de Guatemala.</p>
+  <p><b>Historia en una frase:</b> la Isla de Flores fue <b>Tayasal</b>, capital de los itzáes y una de las últimas ciudades mayas conquistadas (<b>1697</b>). <b>Tikal</b> es Patrimonio Mundial de la UNESCO desde <b>1979</b>.</p>
+  <h3>Datos que debes saber de memoria</h3>
+  <table>
+    <tr><th>Sitio</th><th>Extranjeros</th><th>Nacionales</th><th>Horario / nota</th></tr>
+    <tr><td>Tikal (64 km · 1 h 15)</td><td>Q150</td><td>Q25 · domingo gratis</td><td>6:00–17:00</td></tr>
+    <tr><td>Amanecer/atardecer Tikal</td><td>+Q100</td><td>+Q100</td><td>No se vende el mismo día</td></tr>
+    <tr><td>Yaxhá (70 km · 1 h 45)</td><td>Q80</td><td>Q40</td><td>Famoso por el atardecer</td></tr>
+    <tr><td>Cráter Azul (vía Sayaxché)</td><td colspan="2">Entrada libre · lancha por grupo</td><td><b>Se visita todo el año</b></td></tr>
+  </table>
+  <p>Menores de 12 años no pagan en Tikal. Boletos: agencias <b>Banrural</b> o <b>boletos.culturaguate.gob.gt</b>.</p>`,
+  quiz:[
+    { q:"Un huésped extranjero pregunta cuánto cuesta entrar a Tikal. ¿Qué respondes?",
+      opts:["Q25","Q80","Q150","Es gratis"], ok:2,
+      exp:"Q150 para extranjeros; Q25 para guatemaltecos (gratis los domingos para nacionales)." },
+    { q:"¿Cuál sitio es famoso por ver el atardecer desde el Templo 216?",
+      opts:["Tikal","Yaxhá","Uaxactún","Cráter Azul"], ok:1,
+      exp:"Yaxhá: el tour clásico sale al mediodía y regresa después del atardecer." },
+    { q:"Un huésped pregunta cuándo puede visitar el Cráter Azul. ¿Qué le dices?",
+      opts:["Solo en temporada seca","Se puede visitar todo el año","Solo en verano","Está cerrado"], ok:1,
+      exp:"El Cráter Azul se visita todo el año; se llega en lancha por el río La Pasión." },
+  ]},
+{ id:"m2", n:2, titulo:"Recomienda itinerarios", tag:"Competencia 2",
+  contenido:`
+  <p><b>Regla de oro: primero preguntar, después recomendar.</b> ¿Cuánto tiempo tiene? ¿Qué le gusta: arqueología, naturaleza, aventura, descanso? ¿Viaja con niños?</p>
+  <h3>Itinerarios según el tiempo</h3>
+  <table>
+    <tr><th>Tiempo</th><th>Recomendación</th></tr>
+    <tr><td><b>Medio día</b></td><td>Isla a pie · lancha (Rey Canek, Caballo de Piedra, Chechenal, ARCAS) · grutas Actún Kan</td></tr>
+    <tr><td><b>1 día</b></td><td>Tikal por la mañana + atardecer libre en el malecón</td></tr>
+    <tr><td><b>2 días</b></td><td>Día 1: Tikal · Día 2: Yaxhá con atardecer o Cráter Azul</td></tr>
+    <tr><td><b>3 días</b></td><td>Tikal (amanecer) · Cráter Azul o lago · Yaxhá o Uaxactún</td></tr>
+  </table>
+  <p><b>Con niños:</b> lo ideal es la playa Chechenal. <b>Nunca</b> Tikal ni Yaxhá con solo 4 horas: los traslados no alcanzan.</p>
+  <p><b>Qué llevar a Tikal y Yaxhá:</b> zapatos cómodos <b>antideslizantes</b>, gorra o sombrero, repelente, bloqueador, agua y efectivo. Si el huésped necesita gorra o sombrero, en el lobby tenemos artículos de <b>Selvamos</b> (nuestro proyecto ambiental).</p>
+  <p><b>Ecosistema primero:</b> si Hoteles de Petén tiene un servicio que responde a la necesidad (restaurante, sunset, tour, evento), esa es la primera opción a ofrecer. Los tours en lancha <b>se compran en recepción</b>.</p>`,
+  quiz:[
+    { q:"Un huésped tiene solo la tarde libre (4 horas). ¿Qué NO deberías recomendar?",
+      opts:["Paseo en lancha al mirador","Tour a Tikal","Recorrer la isla a pie","Grutas Actún Kan"], ok:1,
+      exp:"Tikal requiere un día completo. Para media tarde: isla a pie, paseo en lancha o grutas Actún Kan." },
+    { q:"¿Qué haces ANTES de recomendar un itinerario?",
+      opts:["Recomendar Tikal siempre","Preguntar tiempo disponible e intereses","Ofrecer el tour más caro","Darle un mapa y despedirlo"], ok:1,
+      exp:"Un Anfitrión de Petén nunca recomienda a ciegas: primero pregunta tiempo, intereses y con quién viaja." },
+    { q:"Está lloviendo y el huésped perdió su tour. ¿Cuál es la mejor respuesta?",
+      opts:["“Ni modo, así es la lluvia aquí”","“Eso no depende del hotel”","Ofrecer alternativas: reprogramar, museos, grutas","Decirle que reclame a la agencia"], ok:2,
+      exp:"Nunca dejes al huésped sin opciones: reprogramar, actividades bajo techo, grutas Actún Kan." },
+  ]},
+{ id:"m3", n:3, titulo:"Orienta en la Isla de Flores", tag:"Competencia 3",
+  contenido:`
+  <p>La isla se recorre a pie en <b>20–30 minutos</b>. Referencias: la iglesia y el parque en la parte alta, el malecón alrededor, y el puente hacia Santa Elena. En el parque están la <b>catedral, el castillo de Arismendi, el teatro</b> y las <b>estelas de Ixlú</b> (Estela 1 y Altar 1). Hay una cancha donde entrena la <b>academia Flores Island</b>. Es tranquila y segura con precauciones normales.</p>
+  <h3>Lo que siempre preguntan</h3>
+  <ul>
+    <li><b>Bancos:</b> Banrural, BI y BAM en la zona central de Santa Elena; <b>Bantrab, Promerica y BAC en Plaza Mundo Maya</b>.</li>
+    <li><b>Cajeros:</b> Súper 24 (isla) · Maya Mall · calle principal de Santa Elena (5B y BI). El cajero de la isla puede quedarse sin efectivo.</li>
+    <li><b>Cambio de dólares:</b> en los bancos de Santa Elena; y en <b>recepción</b> podemos apoyar con el cambio a quetzales (billetes pequeños).</li>
+    <li><b>Farmacias:</b> Galeno · Moderna 24 h cerca del hospital · Moderna con autoservicio 24 h en la calle 3 de Abril · Mycos con servicio a domicilio. En recepción hay contactos de farmacias o servicio médico.</li>
+    <li><b>Lanchas:</b> al mirador Rey Canek, Caballo de Piedra, Playa Chechenal, ARCAS. <b>Acordar el precio antes de abordar</b> y usar chaleco.</li>
+    <li><b>Tuk-tuk:</b> transporte local con tarifas fijas dentro de Flores–Santa Elena–San Benito.</li>
+    <li><b>Emergencias:</b> Asistencia al Turista <b>1500</b> · Policía <b>110</b> · Bomberos <b>7926-0177</b>.</li>
+  </ul>`,
+  quiz:[
+    { q:"El cajero de la isla está sin efectivo. ¿A dónde orientas al huésped?",
+      opts:["No hay más cajeros en Petén","A Maya Mall o a la calle principal de Santa Elena (5B, BI)","Al aeropuerto","A esperar al día siguiente"], ok:1,
+      exp:"Hay cajeros en Maya Mall y en la calle principal de Santa Elena (5B y BI)." },
+    { q:"Un huésped necesita medicina a las 11 de la noche. ¿Qué le dices?",
+      opts:["Todo está cerrado","Farmacias Moderna atiende 24 h; Mycos hace envíos a domicilio","Que vaya a Tikal","Que espere a mañana"], ok:1,
+      exp:"Moderna tiene servicio 24 horas y Mycos ofrece servicio a domicilio. En recepción hay más contactos." },
+    { q:"¿Cuál es el teléfono de los bomberos?",
+      opts:["911","122","7926-0177","1500"], ok:2,
+      exp:"Bomberos: 7926-0177. Asistencia al Turista: 1500. Policía: 110." },
+  ]},
+{ id:"m4", n:4, titulo:"Vuelos y transporte", tag:"Competencia 4",
+  contenido:`
+  <p>El <b>Aeropuerto Internacional Mundo Maya (FRS)</b> está a 10 minutos del centro y 3 km de Flores. El vuelo a Ciudad de Guatemala dura <b>45 minutos</b>.</p>
+  <ul>
+    <li><b>TAG Airlines:</b> 4–5 vuelos diarios (el primero de madrugada).</li>
+    <li><b>Avianca:</b> hasta 3 vuelos diarios.</li>
+    <li>Recomendar llegar <b>1.5–2 horas antes</b> del vuelo.</li>
+    <li><b>Tarifa de referencia:</b> USD 110 una vía · USD 190 ida y vuelta.</li>
+    <li><b>Buses a la capital:</b> 8–9 horas (Línea Dorada, Fuente del Norte, ADN), salidas diurnas y nocturnas.</li>
+  </ul>
+  <h3>Si el vuelo cambia o se cancela</h3>
+  <p>1. Calma → 2. Confirmar con la aerolínea → 3. Ofrecer alternativas → 4. Coordinar transporte → 5. Dar seguimiento.</p>`,
+  quiz:[
+    { q:"El vuelo del huésped se adelantó a las 6:30 a. m. ¿A qué hora debe salir del hotel (10 min al aeropuerto)?",
+      opts:["6:00","5:45","Entre 4:30 y 4:50","6:20"], ok:2,
+      exp:"Llegar 1.5–2 h antes: al aeropuerto entre 4:30 y 5:00. Con 10 minutos de traslado, salir ~4:30–4:50." },
+    { q:"¿Cuánto dura el vuelo Flores–Ciudad de Guatemala?",
+      opts:["2 horas","45 minutos","30 minutos","4 horas"], ok:1,
+      exp:"Aproximadamente 45 minutos, con TAG (4–5 diarios) o Avianca (hasta 3 diarios)." },
+    { q:"¿Cuál es la tarifa de referencia del vuelo a la capital?",
+      opts:["USD 58–65","USD 110 una vía / 190 ida y vuelta","USD 300","Es gratis"], ok:1,
+      exp:"Alrededor de USD 110 una vía y USD 190 ida y vuelta; conviene confirmar por temporada." },
+  ]},
+{ id:"m6", n:5, titulo:"Comunica con excelencia", tag:"Competencia 6",
+  contenido:`
+  <h3>Protocolo de servicio en 5 pasos</h3>
+  <p>1. <b>Salude</b> con sonrisa (y el nombre del huésped si lo conoce) → 2. <b>Escuche</b> sin interrumpir → 3. <b>Pregunte</b> para entender → 4. <b>Responda</b> claro y breve → 5. <b>Cierre:</b> “¿Puedo ayudarle en algo más?”</p>
+  <h3>Manejo de quejas: método EDRS</h3>
+  <p><b>E</b>scuchar completo · <b>D</b>isculparse con empatía · <b>R</b>esolver u ofrecer alternativas · <b>S</b>eguimiento (confirmar después que quedó resuelto).</p>
+  <h3>Frases</h3>
+  <ul>
+    <li>✅ “Con mucho gusto” · “Permítame confirmarlo” · “Le ofrezco estas dos opciones…”</li>
+    <li>❌ “No sé” · “Eso no me toca a mí” · “Ese no es problema del hotel”</li>
+  </ul>
+  <div class="quote">Si no sabes la respuesta: “Excelente pregunta. Permítame confirmarlo para darle información exacta; en dos minutos le respondo.” — y cumples.</div>`,
+  quiz:[
+    { q:"Un huésped te pregunta algo que no sabes. ¿Qué haces?",
+      opts:["Inventar una respuesta aproximada","Decir “no sé” y seguir trabajando","“Permítame confirmarlo, en dos minutos le respondo” — y cumplir","Mandarlo con otro compañero sin explicación"], ok:2,
+      exp:"Nunca inventes: canaliza con la frase y regresa con la respuesta correcta." },
+    { q:"En el método EDRS, ¿qué convierte una queja en lealtad?",
+      opts:["Escuchar","Disculparse","Resolver","El Seguimiento posterior"], ok:3,
+      exp:"Confirmar después con el huésped que todo quedó resuelto: ese detalle transforma la experiencia." },
+    { q:"Un huésped molesto te reclama en voz alta. ¿Primer paso?",
+      opts:["Justificar al hotel de inmediato","Escuchar completo sin interrumpir","Llamar a seguridad","Responder en el mismo tono"], ok:1,
+      exp:"Primero escuchar completo; después disculparse, resolver y dar seguimiento." },
+  ]},
+{ id:"m7", n:6, titulo:"Crea experiencias memorables", tag:"Competencia 7",
+  contenido:`
+  <p><b>Correcto</b> ≠ <b>memorable</b>. Correcto: dar horarios y tarifas exactos. Memorable: además preguntar, contar cómo suenan los monos aulladores desde el Templo IV, ayudar a reservar y al día siguiente preguntar cómo le fue.</p>
+  <h3>Nuestro ecosistema: el viaje del huésped</h3>
+  <div class="journey">
+    <div class="jstep"><span>1</span>Reserva web</div><div class="jstep"><span>2</span>Aeropuerto</div>
+    <div class="jstep"><span>3</span>Shuttle</div><div class="jstep"><span>4</span>Check-in</div>
+    <div class="jstep"><span>5</span>Agenda cultural</div><div class="jstep"><span>6</span>Consumo interno</div>
+    <div class="jstep"><span>7</span>Tours</div><div class="jstep"><span>8</span>Momentos memorables</div>
+    <div class="jstep"><span>9</span>Reseña y recompra</div>
+  </div>
+  <p>Tú sostienes este viaje desde tu puesto: recepción, piloto, bell boy, restaurante, ama de llaves, mantenimiento o seguridad. <b>Anticípate:</b> ¿niños? menciona Chechenal. ¿Salida de madrugada a Tikal? ofrece el <b>box lunch</b> (desayuno para llevar) y café, que puede adquirir en recepción. ¿Aniversario? avisa al restaurante.</p>
+  <div class="quote">“El conocimiento informa. Las competencias transforman.”</div>`,
+  quiz:[
+    { q:"Un huésped sale a las 4:30 a. m. a Tikal. ¿Qué hace un Anfitrión de Petén que se anticipa?",
+      opts:["Nada, él pidió el tour","Ofrecer el box lunch para llevar y café, que puede adquirir en recepción","Recordarle que madrugue","Cobrarle extra"], ok:1,
+      exp:"Anticiparse a la necesidad antes de que la exprese: el box lunch y el café crean el momento memorable." },
+    { q:"¿En qué etapa del viaje del huésped termina una gran experiencia?",
+      opts:["En el check-in","En el tour","En la reseña, recompra y recomendación","En el aeropuerto"], ok:2,
+      exp:"La etapa 9: la satisfacción se convierte en lealtad, reseñas y recomendación." },
+    { q:"Una pareja menciona que es su aniversario. ¿Respuesta memorable?",
+      opts:["“Felicidades” y nada más","Felicitar, sugerir cena especial, ofrecer reservar y avisar al restaurante para un detalle","Ignorarlo, no es tu área","Darles un mapa"], ok:1,
+      exp:"Reconocer la ocasión + acción concreta (reserva, detalle en mesa) = experiencia que se recuerda." },
+  ]},
+];
+
+const FLASH = [
+  { q:"¿Es seguro caminar por la isla?", a:"Sí, con precauciones normales, también de noche en zonas iluminadas. Asistencia al turista: 1500." },
+  { q:"¿Dónde cambio dólares?", a:"Bancos de Santa Elena; y en recepción podemos apoyar con el cambio a quetzales. Conviene traer billetes pequeños." },
+  { q:"¿Cuánto dura el vuelo a la capital?", a:"45 minutos. TAG (4–5 diarios) y Avianca (hasta 3). Tarifa ref.: USD 110 una vía / 190 ida y vuelta." },
+  { q:"¿Qué llevo a Tikal?", a:"Zapatos cómodos antideslizantes, gorra o sombrero, repelente, bloqueador, agua y efectivo." },
+  { q:"¿Puedo visitar el Cráter Azul ahora?", a:"Sí, se visita todo el año; se llega en lancha por el río La Pasión." },
+  { q:"¿Cuánto se deja de propina?", a:"En restaurantes es usual el 10 %. Para guías es voluntaria y apreciada." },
+  { q:"¿Dónde compro artesanías?", a:"Mercadito y tiendas de la isla; talleres de madera en El Remate." },
+  { q:"¿Cómo contrato un tour en lancha?", a:"Nosotros lo vendemos: se compra en recepción. Siempre acordar el precio y usar chaleco." },
+];
+
+function screenStart(){
+  state.step = 0;
+  go(`<div class="card center">
+    <div class="tag">Corpetur · Hoteles de Petén</div>
+    <h2 style="font-size:26px">Capacitación interactiva<br>Anfitrión de Petén</h2>
+    <p style="margin-top:10px">6 módulos breves + ronda relámpago + examen final.<br>Duración aproximada: <b>40–50 minutos</b>, a tu ritmo.</p>
+    <p style="font-size:13.5px;color:var(--gray)">Al terminar verás tu puntaje por competencia.<br>Puedes enviarlo por WhatsApp a tu facilitador.</p>
+    <input id="nm" placeholder="Escribe tu nombre" style="width:90%;max-width:340px;padding:12px;font-size:16px;border:2px solid var(--moss);border-radius:10px;margin:12px 0;text-align:center">
+    <br><button class="btn" onclick="startTraining()">Comenzar 🌿</button>
+  </div>`);
+}
+function startTraining(){
+  const n = document.getElementById("nm").value.trim();
+  if(!n){ document.getElementById("nm").style.borderColor = "var(--red)"; return; }
+  state.name = n; $who.textContent = "👤 " + n;
+  screenModule(0);
+}
+
+function screenModule(i){
+  const m = MODULES[i];
+  state.step = 1 + i*2;
+  go(`<div class="card">
+    <div class="tag">${m.tag} · Módulo ${m.n} de 6</div>
+    <h2>${m.titulo}</h2>
+    ${m.contenido}
+    <div class="center"><button class="btn" onclick="screenQuiz(${i},0)">Ir al quiz (3 preguntas) →</button></div>
+  </div>`);
+}
+
+function screenQuiz(i, qi){
+  const m = MODULES[i], q = m.quiz[qi];
+  state.step = 2 + i*2;
+  const opts = q.opts.map((o,oi)=>`<button class="opt" id="o${oi}" onclick="answer(${i},${qi},${oi})">${String.fromCharCode(65+oi)}. ${o}</button>`).join("");
+  go(`<div class="card">
+    <div class="tag">${m.tag} · Pregunta ${qi+1} de ${m.quiz.length}</div>
+    <h2 style="font-size:18px">${q.q}</h2>
+    ${opts}
+    <div class="feedback" id="fb"></div>
+    <div class="center"><button class="btn" id="next" disabled onclick="${qi+1 < m.quiz.length ? `screenQuiz(${i},${qi+1})` : (i+1 < MODULES.length ? (i===3 ? `screenFlashIntro()` : `screenModule(${i+1})`) : `screenExamIntro()`)}">Siguiente →</button></div>
+  </div>`);
+}
+function answer(i, qi, oi){
+  const q = MODULES[i].quiz[qi];
+  const fb = document.getElementById("fb");
+  q.opts.forEach((_,k)=>{ const b=document.getElementById("o"+k); b.onclick=null; if(k===q.ok) b.classList.add("ok"); });
+  const good = oi === q.ok;
+  if(!good) document.getElementById("o"+oi).classList.add("bad");
+  addScore(MODULES[i].id, good);
+  fb.className = "feedback " + (good ? "ok" : "bad");
+  fb.innerHTML = (good ? "✅ ¡Correcto! " : "❌ La respuesta correcta era la " + String.fromCharCode(65+q.ok) + ". ") + q.exp;
+  document.getElementById("next").disabled = false;
+}
+
+let flashIdx = 0, flashTimer = null, flashSecs = 30;
+function screenFlashIntro(){
+  state.step = 10;
+  go(`<div class="card center">
+    <div class="tag">Competencia 5 · Ronda relámpago ⚡</div>
+    <h2>Preguntas frecuentes contra el reloj</h2>
+    <p>Te haremos <b>8 preguntas reales de huéspedes</b>. Tienes <b>30 segundos</b> por pregunta para responder <b>en voz alta</b>, como si el huésped estuviera frente a ti.</p>
+    <p>Luego compara con la respuesta modelo y marca honestamente si la tuya fue correcta y completa.</p>
+    <div class="quote">Regla del Anfitrión de Petén: si no sabes, nunca inventes — “Permítame confirmarlo…”</div>
+    <button class="btn" onclick="flashIdx=0; state.flash={ok:0,total:0}; screenFlashQ()">Iniciar ronda ⚡</button>
+  </div>`);
+}
+function screenFlashQ(){
+  const f = FLASH[flashIdx];
+  state.step = 11;
+  flashSecs = 30;
+  go(`<div class="card center">
+    <div class="tag">Pregunta ${flashIdx+1} de ${FLASH.length}</div>
+    <div class="timer" id="tm">30</div>
+    <h2 style="font-size:20px">🧳 “${f.q}”</h2>
+    <p style="color:var(--gray);font-size:14px">Responde en voz alta como al huésped…</p>
+    <button class="btn" onclick="flashReveal()">Ya respondí — ver respuesta modelo</button>
+  </div>`);
+  clearInterval(flashTimer);
+  flashTimer = setInterval(()=>{
+    flashSecs--;
+    const t = document.getElementById("tm");
+    if(!t){ clearInterval(flashTimer); return; }
+    t.textContent = flashSecs;
+    if(flashSecs<=10) t.classList.add("warn");
+    if(flashSecs<=0){ clearInterval(flashTimer); flashReveal(); }
+  },1000);
+}
+function flashReveal(){
+  clearInterval(flashTimer);
+  const f = FLASH[flashIdx];
+  go(`<div class="card center">
+    <div class="tag">Pregunta ${flashIdx+1} de ${FLASH.length}</div>
+    <h2 style="font-size:19px">“${f.q}”</h2>
+    <div class="feedback ok" style="display:block;text-align:left"><b>Respuesta modelo:</b> ${f.a}</div>
+    <p style="margin-top:12px">¿Tu respuesta fue correcta y completa?</p>
+    <button class="btn" onclick="flashMark(true)">✅ Sí</button>
+    <button class="btn sec" onclick="flashMark(false)">❌ Aún no</button>
+  </div>`);
+}
+function flashMark(ok){
+  state.flash.total++; if(ok) state.flash.ok++;
+  flashIdx++;
+  if(flashIdx < FLASH.length) screenFlashQ();
+  else {
+    state.step = 12;
+    go(`<div class="card center">
+      <div class="tag">Ronda completada ⚡</div>
+      <div class="big">${state.flash.ok}/${state.flash.total}</div>
+      <p class="cap">respuestas correctas</p>
+      <p style="margin-top:10px">${state.flash.ok >= 6 ? "¡Excelente dominio de las preguntas frecuentes!" : "Repasa la sección de preguntas frecuentes del manual antes de la evaluación."}</p>
+      <button class="btn" onclick="screenModule(4)">Continuar al módulo 5 →</button>
+    </div>`);
+  }
+}
+
+const EXAM = [
+  { q:"Huésped: “Solo tengo 2 días, primera vez en Petén.” ¿Mejor plan?", mod:"m2",
+    opts:["Los dos días en la isla","Día 1 Tikal · Día 2 Yaxhá con atardecer (o Cráter Azul)","Ir a Belice","Día 1 y 2 en Cráter Azul"], ok:1 },
+  { q:"¿Tarifa de Yaxhá para nacionales?", mod:"m1", opts:["Q150","Q80","Q40","Gratis"], ok:2 },
+  { q:"Huésped estadounidense no habla español. ¿Qué haces primero?", mod:"m6",
+    opts:["Evitarlo","Recibirlo con “Welcome! How may I help you?” y apoyarte en mapas y tarifas","Hablarle en español más fuerte","Decirle que vuelva después"], ok:1 },
+  { q:"¿Dónde hay cajero DENTRO de la isla?", mod:"m3", opts:["Súper 24","Maya Mall","Aeropuerto","Plaza Mundo Maya"], ok:0 },
+  { q:"Vuelo a las 9:00. ¿A qué hora recomiendas estar en el aeropuerto?", mod:"m4", opts:["8:45","7:00–7:30","8:30","6:00"], ok:1 },
+  { q:"Un huésped se queja del ruido. Aplicaste E-D-R. ¿Qué falta?", mod:"m6",
+    opts:["Nada","Seguimiento: confirmar después que se resolvió","Ofrecer descuento siempre","Cambiar el tema"], ok:1 },
+  { q:"¿Cuánto dura el vuelo Flores–Ciudad de Guatemala?", mod:"m4",
+    opts:["50 minutos","45 minutos","2 horas","30 minutos"], ok:1 },
+  { q:"¿Dónde se compran los boletos de Tikal?", mod:"m1",
+    opts:["Solo en la entrada del parque","Agencias Banrural o boletos.culturaguate.gob.gt","En el hotel únicamente","No se necesita boleto"], ok:1 },
+  { q:"Familia con niños y medio día libre. ¿Qué sugieres?", mod:"m2",
+    opts:["Trekking a El Mirador","Playa Chechenal o un paseo en lancha","Tikal completo","Bus a la capital"], ok:1 },
+  { q:"Un huésped necesita bomberos. ¿Qué número das?", mod:"m3", opts:["911","110","7926-0177","1500"], ok:2 },
+];
+function screenExamIntro(){
+  state.step = 15;
+  go(`<div class="card center">
+    <div class="tag">Evaluación final 🏅</div>
+    <h2>Examen del Anfitrión de Petén</h2>
+    <p><b>10 preguntas</b> de situaciones reales, sin retroalimentación hasta el final.</p>
+    <p style="color:var(--gray);font-size:14px">Se aprueba con 8 de 10. ¡Éxitos, ${state.name}!</p>
+    <button class="btn" onclick="examIdx=0; examOk=0; examByMod={}; examAnswersLog=[]; screenExamQ()">Iniciar examen</button>
+  </div>`);
+}
+let examIdx=0, examOk=0, examByMod={};
+function screenExamQ(){
+  const q = EXAM[examIdx];
+  state.step = 16;
+  const opts = q.opts.map((o,oi)=>`<button class="opt" onclick="examAnswer(${oi})">${String.fromCharCode(65+oi)}. ${o}</button>`).join("");
+  go(`<div class="card">
+    <div class="tag">Examen · ${examIdx+1} de ${EXAM.length}</div>
+    <h2 style="font-size:18px">${q.q}</h2>
+    ${opts}
+  </div>`);
+}
+function examAnswer(oi){
+  const q = EXAM[examIdx];
+  const good = oi===q.ok;
+  examAnswersLog[examIdx]=String.fromCharCode(65+oi);
+  if(good) examOk++;
+  examByMod[q.mod] = examByMod[q.mod]||{ok:0,t:0};
+  examByMod[q.mod].t++; if(good) examByMod[q.mod].ok++;
+  examIdx++;
+  if(examIdx < EXAM.length) screenExamQ(); else screenResults();
+}
+
+function buildResultText(){
+  const names = { m1:"Destino Petén", m2:"Itinerarios", m3:"La isla y servicios", m4:"Vuelos y transporte", m6:"Comunicación", m7:"Experiencias memorables" };
+  const lines = [];
+  MODULES.forEach(m=>{
+    const s = state.scores[m.id]||0, t = state.totals[m.id]||0;
+    const e = examByMod[m.id]||{ok:0,t:0};
+    const tot = t + e.t, okk = s + e.ok;
+    const pct = tot ? Math.round(okk/tot*100) : 0;
+    lines.push("• "+names[m.id]+": "+okk+"/"+tot+" ("+pct+"%)");
+  });
+  const fl = state.flash, flPct = fl.total ? Math.round(fl.ok/fl.total*100) : 0;
+  lines.push("• Preguntas frecuentes: "+fl.ok+"/"+fl.total+" ("+flPct+"%)");
+  const passed = examOk >= 8;
+  return "🌿 *Anfitrión de Petén — Resultado de capacitación*\n"+
+    "Participante: "+state.name+"\n"+
+    "Examen final: "+examOk+"/10 — "+(passed?"APROBADO ✅":"No aprobado aún")+"\n\n"+
+    "Desglose por competencia:\n"+lines.join("\n")+"\n\n"+
+    "Completado: "+new Date().toLocaleString("es-GT");
+}
+function sendWhatsApp(){
+  const url = "https://wa.me/"+WA_PHONE+"?text="+encodeURIComponent(buildResultText());
+  window.open(url, "_blank");
+}
+
+function screenResults(){
+  state.step = TOTAL_STEPS;
+  const fl = state.flash, flPct = fl.total ? Math.round(fl.ok/fl.total*100) : 0;
+  const names = { m1:"Destino Petén", m2:"Itinerarios", m3:"La isla y servicios", m4:"Vuelos y transporte", m6:"Comunicación", m7:"Experiencias memorables" };
+  let rows = "";
+  const competencias = [];
+  MODULES.forEach(m=>{
+    const s = state.scores[m.id]||0, t = state.totals[m.id]||0;
+    const e = examByMod[m.id]||{ok:0,t:0};
+    const tot = t + e.t, okk = s + e.ok;
+    const pct = tot ? Math.round(okk/tot*100) : 0;
+    const cls = pct>=80 ? "score-ok" : pct>=60 ? "score-mid" : "score-low";
+    competencias.push({ nombre:names[m.id], valor:okk+"/"+tot+" ("+pct+"%)" });
+    rows += `<div class="pill"><span>${names[m.id]}</span><b class="${cls}">${okk}/${tot} · ${pct}%</b></div>`;
+  });
+  rows += `<div class="pill"><span>Preguntas frecuentes (ronda ⚡)</span><b class="${flPct>=75?"score-ok":flPct>=50?"score-mid":"score-low"}">${fl.ok}/${fl.total} · ${flPct}%</b></div>`;
+  const passed = examOk >= 8;
+  logToSheets({
+    hoja:"Fase 2",
+    examen:"Fase 2 - Anfitrion de Peten",
+    nombre:state.name,
+    examenFinal:examOk+"/10",
+    aprobado:passed?"APROBADO":"No aprobado",
+    relampago:fl.ok+"/"+fl.total,
+    competencias:competencias,
+    respuestasExamen:examAnswersLog
+  });
+  go(`<div class="card center">
+    <div class="tag">Resultados de ${state.name}</div>
+    <div class="big">${examOk}/10</div>
+    <p class="cap">examen final</p>
+    <h2 style="margin-top:8px">${passed ? "🏅 ¡Nivel Anfitrión de Petén!" : "🌱 Anfitrión de Petén en formación"}</h2>
+    <p style="font-size:14px;color:var(--gray)">${passed ? "Excelente. Estás listo para la evaluación práctica “Un día en recepción”." : "Repasa los módulos con menor puntaje y vuelve a intentarlo. ¡Vas por buen camino!"}</p>
+    <h3 style="text-align:left">Desglose por competencia</h3>
+    <div style="text-align:left">${rows}</div>
+    <button class="btn" onclick="sendWhatsApp()" style="background:#25D366;box-shadow:0 4px 0 #1da851">📲 Enviar resultado por WhatsApp</button>
+    <div class="quote" style="margin-top:14px">También puedes tomar captura de esta pantalla. 📸</div>
+    <p style="font-size:12px;color:var(--gray)">Completado: ${new Date().toLocaleString("es-GT")}</p>
+    <button class="btn sec" onclick="location.reload()">Reiniciar para otro participante</button>
+  </div>`);
+}
+
+screenStart();
+</script>
+</body>
+</html>

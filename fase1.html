@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen · Servicio en el Ecosistema · Hoteles de Petén</title>
+<style>
+  :root{ --green:#1F6B4A; --dark:#143D2B; --moss:#97BC62; --tint:#EDF5F0; --gold:#C4942A; --ink:#26332C; --gray:#5A6B61; --red:#B0413E; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Segoe UI', Arial, sans-serif; background:var(--tint); color:var(--ink); min-height:100vh;}
+  .wrap{max-width:760px; margin:0 auto; padding:16px;}
+  header{background:var(--dark); color:#fff; padding:14px 16px; position:sticky; top:0; z-index:10;}
+  header .hwrap{max-width:760px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  header h1{font-size:15px; font-weight:600;}
+  header .who{font-size:12px; color:#CFE5D8;}
+  .progress{height:6px; background:#0e2e20; border-radius:3px; overflow:hidden; margin-top:8px;}
+  .progress>div{height:100%; background:var(--gold); width:0%; transition:width .4s;}
+  .card{background:#fff; border-radius:14px; padding:22px; margin:16px 0; box-shadow:0 2px 10px rgba(0,0,0,.08);}
+  .card h2{color:var(--green); font-size:21px; margin-bottom:10px;}
+  .card h3{color:var(--green); font-size:16px; margin:14px 0 6px;}
+  .card p{font-size:15px; line-height:1.55; margin-bottom:10px;}
+  .tag{display:inline-block; background:var(--tint); color:var(--green); font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; margin-bottom:10px;}
+  .btn{display:inline-block; background:var(--green); color:#fff; border:none; font-size:16px; font-weight:600; padding:13px 26px; border-radius:10px; cursor:pointer; margin-top:8px;}
+  .btn:active{transform:scale(.98);}
+  .btn.sec{background:#fff; color:var(--green); border:2px solid var(--green);}
+  .btn:disabled{opacity:.45; cursor:default;}
+  .opt{display:block; width:100%; text-align:left; background:var(--tint); border:2px solid transparent; border-radius:10px; padding:13px 15px; font-size:15px; margin:8px 0; cursor:pointer; color:var(--ink);}
+  .opt:hover{border-color:var(--moss);}
+  .opt.ok{background:#E3F2E8; border-color:var(--green); font-weight:600;}
+  .opt.bad{background:#F7E6E5; border-color:var(--red);}
+  .opt:disabled{cursor:default;}
+  .feedback{border-radius:10px; padding:12px 14px; font-size:14px; margin-top:10px; display:none;}
+  .feedback.ok{background:#E3F2E8; color:var(--green); display:block;}
+  .feedback.bad{background:#F7E6E5; color:var(--red); display:block;}
+  .center{text-align:center;}
+  .big{font-size:44px; font-weight:800; color:var(--green);}
+  .cap{font-size:12px; color:var(--gray); text-transform:uppercase; letter-spacing:1px;}
+  input[type=text]{width:100%; padding:12px 14px; font-size:15px; border:2px solid #DCE8E1; border-radius:10px; margin:6px 0 4px;}
+  .logo{width:120px; height:auto; display:block; margin:0 auto 8px;}
+  .logo-sm{width:64px; height:auto; display:block; margin:0 auto 6px;}
+  .score-ok{color:var(--green); font-weight:700;} .score-mid{color:var(--gold); font-weight:700;} .score-low{color:var(--red); font-weight:700;}
+  .quote{border-left:4px solid var(--gold); padding:10px 14px; font-style:italic; color:var(--gray); background:var(--tint); border-radius:0 10px 10px 0; margin:12px 0; font-size:14px;}
+  .rev{font-size:14px; border-bottom:1px solid #e3ebe6; padding:8px 0;}
+  .rev b{color:var(--green);}
+  footer{text-align:center; font-size:12px; color:var(--gray); padding:18px 0 30px;}
+</style>
+</head>
+<body>
+<header><div class="hwrap"><h1>Examen &middot; Servicio en el Ecosistema Hoteles de Petén</h1><div class="who" id="whoami"></div></div>
+<div class="wrap" style="padding:0"><div class="progress"><div id="pbar"></div></div></div></header>
+<div class="wrap"><div id="app"></div></div>
+<footer>Hoteles de Petén &middot; Examen del Ecosistema de Servicio</footer>
+<script>
+"use strict";
+const LOGO_SRC="data:image/png;base64,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";
+const app=document.getElementById("app");
+const bar=document.getElementById("pbar");
+const whoami=document.getElementById("whoami");
+const WHATSAPP_TO="50242182300"; /* Opcional: pon el numero del coordinador con codigo de pais, ej "50212345678". Vacio = el usuario elige el contacto al enviar. */
+const QUESTIONS=[
+ { q:"En el ecosistema de Hoteles de Petén, dar servicio significa…",
+   opts:["Hacer únicamente las tareas de mi puesto","Cumplir mi función sabiendo que hace posible el trabajo del siguiente y la experiencia del huésped","Atender solo cuando me lo piden","Resolver solo lo que me conviene"], ok:1,
+   exp:"Servir en el ecosistema es entender que mi trabajo se conecta con el de los demás: cada acción suma o resta a la experiencia del huésped." },
+ { q:"Un huésped te pregunta algo que no es de tu área. ¿Qué decisión aporta al ecosistema?",
+   opts:["Decir \"ese no es mi trabajo\"","Ignorarlo y seguir con lo mío","Ayudarlo o acompañarlo con quien sí puede resolver","Mandarlo a que lo averigüe solo"], ok:2,
+   exp:"Para el huésped no existen los departamentos. \"Ese no es mi trabajo\" rompe el ecosistema; acompañarlo a la solución lo fortalece." },
+ { q:"Ama de llaves: mientras limpias, notas que el aire acondicionado no enfría. ¿Qué haces?",
+   opts:["Nada, no es mi área","Lo reporto de inmediato a mantenimiento","Espero a que el huésped se queje","Cierro la puerta y no digo nada"], ok:1,
+   exp:"Detectar y comunicar a tiempo evita una mala experiencia. Callar \"porque no es mi área\" le resta al ecosistema." },
+ { q:"Recepción: un huésped llega de madrugada, cansado, y su habitación aún no está lista. La mejor decisión es…",
+   opts:["Decirle que espere, sin más","Explicarle con calidez, ofrecerle un espacio para descansar y agilizar con ama de llaves","Culpar a camareras frente al huésped","Decirle que reclame en la mañana"], ok:1,
+   exp:"Servir es anticipar y coordinar entre áreas con calidez. Culpar a otra área frente al huésped nunca aporta." },
+ { q:"¿Cuál de estas actitudes NO aporta al ecosistema?",
+   opts:["Comunicar a tiempo un problema","Buscar culpables en lugar de soluciones","Apoyar a un compañero de otra área","Anticiparse a la necesidad del huésped"], ok:1,
+   exp:"Buscar culpables paraliza; el ecosistema crece cuando cada quien aporta soluciones." },
+ { q:"Restaurante: un huésped dice que su plato llegó frío. ¿Qué decisión sirve mejor?",
+   opts:["Discutir que sí estaba caliente","Disculparte, resolverlo de inmediato y ofrecer una solución","Decir que la cocina se tardó, no tú","Ignorar el comentario"], ok:1,
+   exp:"El huésped no distingue quién falló: ve a Hoteles de Petén. Resolver con actitud, sin excusas ni echar culpas, es servir." },
+ { q:"Piloto/Traslado: el vuelo se retrasó y el huésped llega estresado. Tu decisión ideal:",
+   opts:["Recibirlo con calma, empatía y una bienvenida cálida","Hacerle ver que lo esperaste mucho tiempo","Manejar apurado para recuperar el tiempo","No saludar porque vienes cansado"], ok:0,
+   exp:"El piloto crea la primera impresión. La empatía convierte un mal momento en una gran bienvenida." },
+ { q:"Termina tu turno, pero un huésped todavía necesita ayuda. ¿Qué haces?",
+   opts:["Me voy, ya cumplí mi horario","Lo atiendo o me aseguro de dejarlo en buenas manos antes de irme","Le digo que vuelva mañana","Le paso el problema a cualquiera sin explicar"], ok:1,
+   exp:"El servicio no termina cuando acaba el turno; termina cuando el huésped queda bien atendido. Dejar todo a medias rompe la cadena." },
+ { q:"Mantenimiento: ves una lámpara fundida en un pasillo que no es tu zona asignada. La mejor decisión:",
+   opts:["Dejarla, no es mi zona","Resolverla o reportarla, porque todo el hotel es parte de la experiencia","Esperar la orden de un jefe","Avisar solo si alguien más lo nota"], ok:1,
+   exp:"En un ecosistema no hay zonas ajenas: cada detalle suma a la experiencia del huésped." },
+ { q:"Un compañero de otra área está saturado y te pide apoyo en un momento clave. ¿Qué aporta?",
+   opts:["Decirle que no es tu problema","Apoyarlo si puedes, porque su éxito también es el tuyo","Hacer como que no escuchaste","Ayudar solo si te lo ordenan"], ok:1,
+   exp:"Cuando una pieza mejora, todos ganan. Apoyarse entre áreas fortalece a todo el equipo." },
+ { q:"Reservaciones: no estás seguro si hay disponibilidad para lo que pide el huésped. Lo correcto es…",
+   opts:["Prometer que sí, para no perder la venta","Verificar y confirmar con información veraz antes de comprometer","Decir \"creo que sí\" sin revisar","Pasarle el problema a recepción"], ok:1,
+   exp:"Prometer lo que no se puede cumplir genera una mala experiencia después. Servir es dar información veraz y coordinar bien." },
+ { q:"¿Cuál es un ejemplo de trabajar solo por cumplir (que NO aporta)?",
+   opts:["Hacer lo mínimo, sin interés por el huésped","Anticipar lo que el huésped necesita","Buscar mejorar mi área cada día","Recibir con una sonrisa"], ok:0,
+   exp:"Trabajar solo por cumplir debe morir para que nazca la pasión por servir. El ecosistema se nutre de compromiso, no de mínimos." },
+ { q:"Un huésped molesto te reclama algo que no fue tu culpa. La mejor decisión:",
+   opts:["Defenderte y aclarar que no fuiste tú","Escuchar con empatía, disculparte a nombre del hotel y buscar la solución","Decirle que hable con otro","Restarle importancia a su molestia"], ok:1,
+   exp:"El huésped ve a Hoteles de Petén, no a una persona. Escuchar, empatizar y resolver convierte una queja en una oportunidad." },
+ { q:"Recibes una reserva con una nota especial: es el aniversario del huésped. ¿Qué decisión suma?",
+   opts:["Ignorar la nota, no es indispensable","Compartirla con las áreas para preparar un detalle y sorprenderlo","Guardarla solo para mí","Comentarla cuando el huésped ya se fue"], ok:1,
+   exp:"La comunicación entre áreas transforma un dato en una experiencia memorable. La falta de comunicación le resta al ecosistema." },
+ { q:"En una frase, ¿cómo se construye el ecosistema de servicio?",
+   opts:["Cuando cada quien hace solo su parte","Cuando cada quien entiende que su trabajo hace posible el del siguiente y cuida la experiencia del huésped","Cuando cada área compite con las demás","Cuando el huésped se adapta a nosotros"], ok:1,
+   exp:"No somos departamentos separados; somos un ecosistema. El servicio se construye cuando todos conectan su trabajo con el del siguiente." },
+];
+const SHEETS_ENDPOINT="PEGA_AQUI_LA_URL_DEL_APPS_SCRIPT"; /* URL /exec del Web App de Google Apps Script */
+let answersLog=[];
+let idx=0, score=0, name="", answered=false;
+const total=QUESTIONS.length;
+function logToSheets(payload){
+  if(!SHEETS_ENDPOINT || SHEETS_ENDPOINT.indexOf("PEGA_AQUI")===0) return;
+  try{
+    fetch(SHEETS_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+  }catch(e){/* guardado silencioso, no interrumpe al participante */}
+}
+function setProgress(p){ bar.style.width=p+"%"; }
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+function intro(){
+  setProgress(0);
+  app.innerHTML=`
+   <div class="card center">
+     <img class="logo" src="${LOGO_SRC}" alt="Hoteles de Petén">
+     <div class="tag">Servicio en el Ecosistema</div>
+     <h2>Examen: El servicio dentro del ecosistema</h2>
+     <p>Pon a prueba lo que sabes sobre el <b>servicio dentro del ecosistema de Hoteles de Petén</b>: las decisiones que cada colaborador toma al atender, y lo que <b>no</b> aporta. Son ${total} preguntas de escenario; al final verás tu resultado.</p>
+     <input type="text" id="nm" placeholder="Escribe tu nombre (opcional)">
+     <button class="btn" onclick="start()">Comenzar &#127807;</button>
+   </div>`;
+}
+function start(){
+  const el=document.getElementById("nm"); name=el && el.value.trim() ? el.value.trim() : "";
+  whoami.textContent = name ? ("Participante: "+name) : "";
+  idx=0; score=0; answersLog=[]; renderQ();
+}
+function renderQ(){
+  answered=false;
+  const it=QUESTIONS[idx];
+  setProgress(Math.round(idx/total*100));
+  let opts="";
+  it.opts.forEach((o,oi)=>{ opts+=`<button class="opt" id="opt${oi}" onclick="answer(${oi})">${String.fromCharCode(65+oi)}. ${esc(o)}</button>`; });
+  app.innerHTML=`
+   <div class="card">
+     <div class="tag">Pregunta ${idx+1} de ${total}</div>
+     <h2>${esc(it.q)}</h2>
+     ${opts}
+     <div class="feedback" id="fb"></div>
+     <div id="nextwrap" style="margin-top:6px"></div>
+   </div>`;
+}
+function answer(oi){
+  if(answered) return; answered=true;
+  answersLog[idx]=String.fromCharCode(65+oi);
+  const it=QUESTIONS[idx];
+  for(let i=0;i<it.opts.length;i++){ const b=document.getElementById("opt"+i); b.disabled=true; if(i===it.ok) b.classList.add("ok"); }
+  const fb=document.getElementById("fb");
+  if(oi===it.ok){ score++; fb.className="feedback ok"; fb.innerHTML="&#9989; ¡Correcto! "+esc(it.exp); }
+  else { document.getElementById("opt"+oi).classList.add("bad"); fb.className="feedback bad"; fb.innerHTML="&#10060; La respuesta que suma es <b>"+String.fromCharCode(65+it.ok)+"</b>. "+esc(it.exp); }
+  const last = idx===total-1;
+  document.getElementById("nextwrap").innerHTML=`<button class="btn" onclick="next()">${last?"Ver resultado &#127942;":"Siguiente &rarr;"}</button>`;
+}
+function next(){ idx++; if(idx<total) renderQ(); else result(); }
+function result(){
+  setProgress(100);
+  const passed = score>=Math.ceil(total*0.7);
+  logToSheets({
+    hoja:"Fase 1",
+    examen:"Fase 1 - Servicio en el Ecosistema",
+    nombre:name||"(sin nombre)",
+    punteo:score,
+    total:total,
+    nivel:passed?"Ecosistemista Certificado":"Ecosistemista en formacion",
+    respuestas:answersLog
+  });
+  const filled = Math.round(score/total*5);
+  const stars = "⭐".repeat(filled)+"☆".repeat(5-filled);
+  const cls = passed?"score-ok":(score>=Math.ceil(total*0.5)?"score-mid":"score-low");
+  const _msg = `Examen: Servicio en el Ecosistema - Hoteles de Petén
+Participante: ${name||"(sin nombre)"}
+Resultado: ${score}/${total} ${stars}
+Nivel: ${passed?"Ecosistemista Certificado":"Ecosistemista en formación"}`;
+  const _wa = "https://wa.me/"+WHATSAPP_TO+"?text="+encodeURIComponent(_msg);
+  let review="";
+  QUESTIONS.forEach((it,i)=>{ review+=`<div class="rev"><b>${i+1}.</b> ${esc(it.q)}<br>&#9989; ${esc(it.opts[it.ok])}</div>`; });
+  app.innerHTML=`
+   <div class="card center">
+     <img class="logo-sm" src="${LOGO_SRC}" alt="Hoteles de Petén">
+     <div class="cap">${name?esc(name)+" &middot; ":""}Resultado</div>
+     <div class="big ${cls}">${score} / ${total}</div>
+     <div style="font-size:32px;letter-spacing:5px;margin:2px 0 4px">${stars}</div>
+     <h2>${passed?"⭐ Ecosistemista Certificado":"🌱 Ecosistemista en formación"}</h2>
+     <p>${passed?"¡Excelente! Tomas decisiones que fortalecen el ecosistema y cuidas la experiencia del huésped.":"Vas por buen camino. Repasa el video y vuelve a intentarlo: cada decisión suma al ecosistema."}</p>
+     <div class="quote">No somos departamentos trabajando por separado. Somos un ecosistema creando experiencias inolvidables.</div>
+     <a class="btn" style="text-decoration:none;display:inline-block" href="${_wa}" target="_blank" rel="noopener">&#128242; Enviar mi resultado por WhatsApp</a>
+     <div style="margin-top:10px"><button class="btn sec" onclick="intro()">Reiniciar para otro participante</button></div>
+     <h3 style="margin-top:18px;text-align:left">Respuestas que suman</h3>
+     <div style="text-align:left">${review}</div>
+   </div>`;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+intro();
+</script>
+</body>
+</html>
