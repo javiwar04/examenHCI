@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen &middot; Recepcionista Nocturno &middot; Hoteles de Petén</title>
+<style>
+  :root{ --green:#1F6B4A; --dark:#143D2B; --moss:#97BC62; --tint:#EDF5F0; --gold:#C4942A; --ink:#26332C; --gray:#5A6B61; --red:#B0413E; --night:#0e2e20; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Segoe UI', Arial, sans-serif; background:var(--tint); color:var(--ink); min-height:100vh;}
+  .wrap{max-width:760px; margin:0 auto; padding:16px;}
+  header{background:var(--dark); color:#fff; padding:14px 16px; position:sticky; top:0; z-index:10;}
+  header .hwrap{max-width:760px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  header h1{font-size:15px; font-weight:600;}
+  header .who{font-size:12px; color:#CFE5D8;}
+  .progress{height:6px; background:#0e2e20; border-radius:3px; overflow:hidden; margin-top:8px;}
+  .progress>div{height:100%; background:var(--gold); width:0%; transition:width .4s;}
+  .card{background:#fff; border-radius:14px; padding:22px; margin:16px 0; box-shadow:0 2px 10px rgba(0,0,0,.08);}
+  .card h2{color:var(--green); font-size:21px; margin-bottom:10px;}
+  .card h3{color:var(--green); font-size:16px; margin:14px 0 6px;}
+  .card p{font-size:15px; line-height:1.55; margin-bottom:10px;}
+  .tag{display:inline-block; background:var(--tint); color:var(--green); font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; margin-bottom:10px;}
+  .tag.sec{background:#EAF2FF; color:#274B8F;}
+  .btn{display:inline-block; background:var(--green); color:#fff; border:none; font-size:16px; font-weight:600; padding:13px 26px; border-radius:10px; cursor:pointer; margin-top:8px;}
+  .btn:active{transform:scale(.98);}
+  .btn.sec{background:#fff; color:var(--green); border:2px solid var(--green);}
+  .btn:disabled{opacity:.45; cursor:default;}
+  .opt{display:block; width:100%; text-align:left; background:var(--tint); border:2px solid transparent; border-radius:10px; padding:13px 15px; font-size:15px; margin:8px 0; cursor:pointer; color:var(--ink);}
+  .opt:hover{border-color:var(--moss);}
+  .opt.ok{background:#E3F2E8; border-color:var(--green); font-weight:600;}
+  .opt.bad{background:#F7E6E5; border-color:var(--red);}
+  .opt:disabled{cursor:default;}
+  .feedback{border-radius:10px; padding:12px 14px; font-size:14px; margin-top:10px; display:none;}
+  .feedback.ok{background:#E3F2E8; color:var(--green); display:block;}
+  .feedback.bad{background:#F7E6E5; color:var(--red); display:block;}
+  .center{text-align:center;}
+  .big{font-size:44px; font-weight:800; color:var(--green);}
+  .cap{font-size:12px; color:var(--gray); text-transform:uppercase; letter-spacing:1px;}
+  input[type=text]{width:100%; padding:12px 14px; font-size:15px; border:2px solid #DCE8E1; border-radius:10px; margin:6px 0 4px;}
+  .logo{width:110px; height:auto; display:block; margin:0 auto 8px;}
+  .logo-sm{width:60px; height:auto; display:block; margin:0 auto 6px;}
+  .brand{color:var(--green); font-weight:800; letter-spacing:.5px; font-size:15px; margin-bottom:2px;}
+  .score-ok{color:var(--green); font-weight:700;} .score-mid{color:var(--gold); font-weight:700;} .score-low{color:var(--red); font-weight:700;}
+  .quote{border-left:4px solid var(--gold); padding:10px 14px; font-style:italic; color:var(--gray); background:var(--tint); border-radius:0 10px 10px 0; margin:12px 0; font-size:14px;}
+  .rev{font-size:14px; border-bottom:1px solid #e3ebe6; padding:8px 0;}
+  .rev b{color:var(--green);}
+  .breakdown{text-align:left; font-size:14px; margin-top:6px;}
+  .breakdown .brow{display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #e3ebe6;}
+  footer{text-align:center; font-size:12px; color:var(--gray); padding:18px 0 30px;}
+</style>
+</head>
+<body>
+<header><div class="hwrap"><h1>Examen &middot; Recepcionista Nocturno &middot; Hoteles de Petén</h1><div class="who" id="whoami"></div></div>
+<div class="wrap" style="padding:0"><div class="progress"><div id="pbar"></div></div></div></header>
+<div class="wrap"><div id="app"></div></div>
+<footer>Hoteles de Petén &middot; Evaluación del Turno Nocturno &middot; &#127769;</footer>
+<script>
+"use strict";
+/* Emblema SVG (temática nocturna). Para usar tu logo oficial, cambia LOGO_SRC por la ruta o el data URI de tu imagen. */
+const LOGO_SRC="data:image/svg+xml;utf8,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#1F6B4A'/><stop offset='1' stop-color='#143D2B'/></linearGradient></defs><rect x='8' y='8' width='224' height='224' rx='40' fill='url(#g)'/><circle cx='162' cy='74' r='30' fill='#C4942A'/><circle cx='151' cy='66' r='26' fill='#143D2B'/><path d='M120 205 C120 152 96 120 58 106 C104 110 125 138 125 172 C132 132 118 98 90 80 C133 92 152 130 152 178 C152 190 149 199 146 205 Z' fill='#97BC62'/><path d='M120 205 L120 150' stroke='#143D2B' stroke-width='4' stroke-linecap='round'/></svg>");
+const app=document.getElementById("app");
+const bar=document.getElementById("pbar");
+const whoami=document.getElementById("whoami");
+const WHATSAPP_TO="50242182300"; /* Numero del coordinador con codigo de pais. Vacio = el usuario elige el contacto. */
+const SHEETS_ENDPOINT="https://script.google.com/macros/s/AKfycbzvdaLNSBK05LkTLfg1ggBptKA3FY2juZkbFdMe4hpuzzqxZ9QiXMxJGu07hIApXUmJ/exec"; /* URL /exec del Web App de Google Apps Script. */
+
+/* ==== BANCO DE PREGUNTAS ====  q=pregunta, sec=seccion, opts=opciones, ok=indice correcto, exp=explicacion */
+const QUESTIONS=[
+ { sec:"Contable y Administrativo",
+   q:"¿Cuál es el porcentaje del Impuesto de Hospedaje en Guatemala?",
+   opts:["5%","10%","12%","15%"], ok:1,
+   exp:"El Impuesto de Hospedaje (IVH/INGUAT) en Guatemala es del 10% sobre el valor del hospedaje. No se confunde con el IVA del 12%." },
+
+ { sec:"Contable y Administrativo",
+   q:"¿Qué es una FEL y para qué se utiliza?",
+   opts:["Un formulario de limpieza de habitaciones","La Factura Electrónica en Línea, el sistema oficial de la SAT para emitir facturas","Una tarifa especial para huéspedes frecuentes","Un reporte de fallas de mantenimiento"], ok:1,
+   exp:"La FEL (Factura Electrónica en Línea) es el régimen de la SAT para emitir y certificar facturas de forma digital. El recepcionista nocturno debe saber emitirla al cerrar la noche o al hacer check-out de madrugada." },
+
+ { sec:"Contable y Administrativo",
+   q:"En Guatemala, el IVA que se aplica a la mayoría de bienes y servicios es del…",
+   opts:["10%","12%","15%","8%"], ok:1,
+   exp:"El IVA general en Guatemala es del 12%. En Excel se calcularía multiplicando el monto por 0.12 (por ejemplo =A2*0.12)." },
+
+ { sec:"Herramientas (Word/Excel)",
+   q:"En Excel, ¿qué fórmula calcula correctamente el IVA del 12% de un monto que está en la celda A2?",
+   opts:["=A2+12","=A2*0.12","=A2/12","=SUMA(A2:12)"], ok:1,
+   exp:"El IVA del 12% se obtiene multiplicando el monto por 0.12: =A2*0.12. Para el total con IVA se usaría =A2*1.12." },
+
+ { sec:"Herramientas (Word/Excel)",
+   q:"En Excel, ¿cómo verías únicamente las facturas del mes de enero dentro de una lista larga?",
+   opts:["Borrando manualmente el resto de meses","Usando un Filtro sobre la columna de fecha y marcando solo enero","Cambiando el color de las filas de enero","Ordenando la caja chica"], ok:1,
+   exp:"Se usa Datos > Filtro y en la columna de fecha se selecciona solo enero. El filtro oculta el resto sin borrar datos." },
+
+ { sec:"Herramientas (Word/Excel)",
+   q:"En Microsoft Word, ¿cómo se inserta una tabla en un documento?",
+   opts:["Menú Inicio > Negrita","Pestaña Insertar > Tabla, y eliges filas y columnas","Pestaña Diseño > Márgenes","Con la tecla Enter varias veces"], ok:1,
+   exp:"En Word: pestaña Insertar > Tabla, y se define el número de filas y columnas (por ejemplo 3 columnas y 5 filas para un registro de huéspedes)." },
+
+ { sec:"Herramientas (Word/Excel)",
+   q:"En Excel, ¿qué fórmula suma los montos de la celda B2 a la B10 para obtener el total de ingresos?",
+   opts:["=B2+B10","=SUMA(B2:B10)","=TOTAL(B2-B10)","=B2:B10"], ok:1,
+   exp:"Para sumar un rango se usa =SUMA(B2:B10). Los dos puntos (:) indican 'desde B2 hasta B10'. Es la fórmula base para totalizar ingresos de la noche." },
+
+ { sec:"Herramientas (Word/Excel)",
+   q:"En Word, para poner un texto en negrita, ¿qué haces?",
+   opts:["Lo escribo en mayúsculas","Lo selecciono y presiono Ctrl+N (o el botón N de la barra)","Cambio el color a rojo","Presiono la barra espaciadora"], ok:1,
+   exp:"Se selecciona el texto y se usa el botón 'N' (Negrita) o el atajo Ctrl+N en Word en español. Para subrayar es la 'S', y el tamaño de letra se cambia en el mismo menú de fuente." },
+
+ { sec:"Computación",
+   q:"Un huésped te pide su factura por correo electrónico. ¿En qué formato conviene enviarla?",
+   opts:["Como archivo de Word editable","En PDF, que no se puede alterar y se ve igual en cualquier dispositivo","Como foto borrosa tomada con el celular","No se puede enviar por correo"], ok:1,
+   exp:"El PDF es el estándar para documentos oficiales: conserva el formato y no se altera. En Word o el sistema se usa 'Guardar como / Exportar a PDF' y se adjunta al correo." },
+
+ { sec:"Computación",
+   q:"¿Cuáles son los atajos de teclado para copiar y pegar?",
+   opts:["Ctrl+C para copiar y Ctrl+V para pegar","Ctrl+X para copiar y Ctrl+Z para pegar","Alt+C y Alt+V","F1 y F2"], ok:0,
+   exp:"Ctrl+C copia y Ctrl+V pega (Ctrl+X corta y Ctrl+Z deshace). Son atajos universales que agilizan el trabajo en el sistema y en Excel/Word." },
+
+ { sec:"Computación",
+   q:"Para adjuntar un documento en un correo electrónico, normalmente debes…",
+   opts:["Escribirlo dentro del mensaje a mano","Usar el botón de 'Adjuntar' (clip) y seleccionar el archivo desde la computadora","Imprimirlo y escanearlo cada vez","No se pueden adjuntar archivos"], ok:1,
+   exp:"Se usa el ícono de clip (Adjuntar) y se busca el archivo (por ejemplo el PDF de la factura o el reporte). Conviene confirmar que el archivo quedó adjunto antes de enviar." },
+
+ { sec:"Computación",
+   q:"La impresora no imprime el reporte del cierre nocturno. ¿Qué revisas primero?",
+   opts:["Reinstalo todo el sistema operativo","Que esté encendida, conectada, con papel y tinta, y que no tenga trabajos atascados en la cola","Compro una impresora nueva","Espero al día siguiente sin avisar"], ok:1,
+   exp:"Antes de escalar: encendido, cable/red, papel, tinta/tóner y la cola de impresión (a veces hay un documento atascado que bloquea el resto). Muchas fallas se resuelven en segundos." },
+
+ { sec:"Computación",
+   q:"Buena práctica de seguridad informática en la recepción es…",
+   opts:["Anotar la contraseña del sistema en un papel pegado al monitor","Compartir tu usuario con cualquiera que lo pida","Bloquear la sesión (Windows + L) al alejarte y no compartir tu contraseña","Dejar la sesión abierta toda la noche sin cuidado"], ok:2,
+   exp:"La información de huéspedes y de caja es sensible. Bloquea la pantalla al alejarte (tecla Windows + L), no compartas tu contraseña ni la dejes a la vista." },
+
+ { sec:"Computación",
+   q:"Terminaste un reporte importante en la computadora. ¿Qué es lo más prudente?",
+   opts:["Confiar en que la computadora nunca se apaga","Guardarlo seguido (Ctrl+G / Guardar) y respaldarlo, por si se va la luz o falla el equipo","Dejarlo sin guardar hasta el otro turno","Borrarlo para no ocupar espacio"], ok:1,
+   exp:"Guardar con frecuencia y tener un respaldo evita perder el trabajo si se corta la energía de madrugada o el equipo falla. En la noche los cortes de luz son un riesgo real." },
+
+ { sec:"Turno Nocturno",
+   q:"El 'cierre nocturno' o night audit consiste principalmente en…",
+   opts:["Apagar todas las luces del hotel","Cuadrar la caja, cerrar el día en el sistema y dejar los reportes de ocupación e ingresos listos","Limpiar el lobby","Despertar a los huéspedes"], ok:1,
+   exp:"El night audit es el corte del día: se concilia la caja con el sistema, se cierran las transacciones y se generan los reportes de ocupación e ingresos para la administración. Es la tarea clave del recepcionista nocturno." },
+
+ { sec:"Turno Nocturno",
+   q:"Al recibir el turno de noche, lo más profesional es…",
+   opts:["Empezar a trabajar sin revisar nada","Recibir la caja contando el efectivo, revisar el libro de novedades y las llegadas/salidas pendientes","Dormir hasta que llegue un huésped","Apagar el teléfono para no ser interrumpido"], ok:1,
+   exp:"El relevo de turno se hace contando la caja frente al compañero, revisando el libro de novedades (pendientes, incidencias) y las reservas por llegar o salir. Así nada queda sin registrar." },
+
+ { sec:"Turno Nocturno",
+   q:"Llega un huésped con reserva a las 2:00 a.m. La forma correcta de hacer el check-in es…",
+   opts:["Decirle que regrese en la mañana","Recibirlo con amabilidad, verificar su reserva y documento, y darle su habitación con el menor ruido posible","Darle cualquier habitación sin registrar","Cobrarle más por ser de madrugada"], ok:1,
+   exp:"El check-in de madrugada se hace igual de bien que de día: bienvenida cálida, verificación de reserva e identificación, registro y entrega de llave cuidando no molestar a otros huéspedes." },
+
+ { sec:"Resolución de Conflictos",
+   q:"Un huésped llega molesto porque su habitación no está lista a la hora acordada. ¿Cómo lo manejas?",
+   opts:["Le digo que espere sin explicación","Discuto que sí estaba lista","Me disculpo con calidez, le explico el tiempo estimado y le ofrezco un espacio cómodo mientras se agiliza","Culpo a housekeeping frente a él"], ok:2,
+   exp:"Servir es disculparse a nombre del hotel, dar información clara del tiempo y ofrecer una solución (una sala, una bebida) mientras se agiliza. Nunca culpar a otra área frente al huésped." },
+
+ { sec:"Resolución de Conflictos",
+   q:"Un cliente exige un servicio que el hotel no puede ofrecer. Lo mejor es…",
+   opts:["Prometérselo aunque no exista","Explicarle con amabilidad que por ahora no se ofrece y proponerle una alternativa","Ignorar su solicitud","Decirle que reclame a otro"], ok:1,
+   exp:"Se informa con honestidad y empatía que ese servicio no está disponible, y se ofrece una alternativa. Prometer lo que no existe genera una peor experiencia después." },
+
+ { sec:"Redes e Internet",
+   q:"Un huésped reporta que el Wi-Fi no funciona en su habitación. ¿Cuál es un primer paso razonable?",
+   opts:["Decirle que use datos móviles","Verificar la señal, reiniciar el router/access point y comprobar si la falla es general o solo de su cuarto","Cambiarlo de hotel","Ignorarlo hasta la mañana"], ok:1,
+   exp:"Primero se confirma si la falla es general o puntual, se revisa que el router/access point esté encendido y con cables conectados, y se reinicia. Si persiste, se reporta al soporte técnico y se le da seguimiento al huésped." },
+
+ { sec:"Mantenimiento Básico",
+   q:"Un huésped dice que el aire acondicionado no enfría. ¿Qué revisas primero antes de reportarlo?",
+   opts:["Nada, solo lo reporto y me olvido","Que esté encendido, la temperatura programada, el modo (frío, no ventilador) y que el filtro no esté obstruido","Le digo que abra la ventana","Le subo el precio de la habitación"], ok:1,
+   exp:"Antes de escalar se revisa lo básico: que esté encendido, en modo frío (no solo ventilador), con temperatura baja programada y filtro/rejilla sin obstrucción. Si aun así no enfría, se reporta a mantenimiento y se registra." },
+
+ { sec:"Mantenimiento Básico",
+   q:"Un televisor no da imagen en una habitación. ¿Qué revisas primero?",
+   opts:["Que esté conectado a la corriente, encendido y en la entrada/fuente (HDMI/AV) correcta","Nada, lo reporto directo a un técnico externo","Le cambio la habitación al huésped de inmediato","Le digo que no vea televisión"], ok:0,
+   exp:"Lo básico primero: cable de corriente, que el televisor y el decodificador estén encendidos y la fuente/entrada correcta seleccionada (HDMI/AV). Muchas fallas se resuelven sin llamar a un técnico." },
+
+ { sec:"Seguridad Nocturna",
+   q:"De madrugada notas a una persona desconocida merodeando cerca de las habitaciones. ¿Qué haces?",
+   opts:["Lo ignoro","Me mantengo alerta, lo observo con discreción, verifico si es huésped y, si hay riesgo, aviso a seguridad/mi supervisor y registro la novedad","Lo confronto solo y a gritos","Abandono la recepción para seguirlo"], ok:1,
+   exp:"La seguridad del huésped es prioridad en la noche. Se observa con discreción, se verifica si corresponde al hotel y ante riesgo se activa el protocolo (seguridad/supervisor) sin dejar sola la recepción, dejando todo por escrito." },
+
+ { sec:"Seguridad Nocturna",
+   q:"Se produce una emergencia de madrugada (incendio o sismo). ¿Cuál es la prioridad?",
+   opts:["Cuadrar la caja primero","La seguridad de las personas: activar la alarma, guiar la evacuación por las salidas y llamar a los servicios de emergencia","Esconderse","Esperar a la mañana para reportar"], ok:1,
+   exp:"Ante una emergencia lo primero es proteger la vida: activar alarma, guiar a los huéspedes por las rutas de evacuación y llamar a emergencias (Bomberos 122/123, PNC 110/120). Por eso el recepcionista nocturno debe conocer el plan de emergencia." },
+
+ { sec:"Manejo de Efectivo",
+   q:"Durante la noche recibes un pago en efectivo. Lo correcto es…",
+   opts:["Guardarlo sin registrar","Emitir el comprobante/factura (FEL), registrar el ingreso en el sistema y resguardar el efectivo en la caja","Dejarlo sobre el mostrador","Prestarlo si alguien lo pide"], ok:1,
+   exp:"Todo ingreso se factura (FEL), se registra en el sistema y se resguarda en caja. El manejo transparente del efectivo es clave para que el cierre nocturno cuadre." },
+
+ { sec:"Inglés y Servicio",
+   q:"Un huésped extranjero llega de noche y no habla español. La mejor actitud es…",
+   opts:["Ignorarlo hasta que hable español","Saludarlo y ayudarlo con un inglés básico y amable, apoyándome en frases clave y buena disposición","Reírme de la situación","Enviarlo a otro hotel"], ok:1,
+   exp:"No hace falta inglés perfecto: un saludo cordial ('Good evening, welcome'), frases básicas y disposición para ayudar hacen la diferencia. La actitud de servicio comunica más que el idioma." },
+
+ { sec:"Actitud de Servicio",
+   q:"En una frase, ¿qué hace grande al recepcionista nocturno?",
+   opts:["Hacer lo mínimo porque nadie lo ve","Ser los ojos, la voz y la seguridad del hotel mientras todos duermen: atender, cuidar y dejar todo en orden para el día siguiente","Dormir durante el turno","Trabajar solo cuando hay huéspedes despiertos"], ok:1,
+   exp:"El turno nocturno exige responsabilidad y criterio propio: eres la cara del hotel, su seguridad y quien deja todo listo para el amanecer. Ese compromiso es lo que distingue a un gran recepcionista nocturno." },
+];
+
+let answersLog=[];
+let idx=0, score=0, name="", answered=false;
+const total=QUESTIONS.length;
+
+function logToSheets(payload){
+  if(!SHEETS_ENDPOINT || SHEETS_ENDPOINT.indexOf("PEGA_AQUI")===0) return;
+  try{
+    fetch(SHEETS_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+  }catch(e){/* guardado silencioso, no interrumpe al participante */}
+}
+function setProgress(p){ bar.style.width=p+"%"; }
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+function intro(){
+  setProgress(0);
+  app.innerHTML=`
+   <div class="card center">
+     <img class="logo" src="${LOGO_SRC}" alt="Hoteles de Petén">
+     <div class="brand">HOTELES DE PETÉN</div>
+     <div class="tag">&#127769; Turno Nocturno</div>
+     <h2>Examen: Recepcionista Nocturno</h2>
+     <p>Evalúa tus conocimientos y criterio para el <b>turno de noche en Hoteles de Petén</b>: contabilidad básica, herramientas, atención al huésped, seguridad, mantenimiento básico y el cierre nocturno. Son ${total} preguntas de escenario; al final verás tu resultado y las respuestas correctas.</p>
+     <input type="text" id="nm" placeholder="Escribe tu nombre (opcional)">
+     <button class="btn" onclick="start()">Comenzar &#127769;</button>
+   </div>`;
+}
+function start(){
+  const el=document.getElementById("nm"); name=el && el.value.trim() ? el.value.trim() : "";
+  whoami.textContent = name ? ("Participante: "+name) : "";
+  idx=0; score=0; answersLog=[]; renderQ();
+}
+function renderQ(){
+  answered=false;
+  const it=QUESTIONS[idx];
+  setProgress(Math.round(idx/total*100));
+  let opts="";
+  it.opts.forEach((o,oi)=>{ opts+=`<button class="opt" id="opt${oi}" onclick="answer(${oi})">${String.fromCharCode(65+oi)}. ${esc(o)}</button>`; });
+  app.innerHTML=`
+   <div class="card">
+     <span class="tag">Pregunta ${idx+1} de ${total}</span>
+     <span class="tag sec">${esc(it.sec)}</span>
+     <h2>${esc(it.q)}</h2>
+     ${opts}
+     <div class="feedback" id="fb"></div>
+     <div id="nextwrap" style="margin-top:6px"></div>
+   </div>`;
+}
+function answer(oi){
+  if(answered) return; answered=true;
+  answersLog[idx]=String.fromCharCode(65+oi);
+  const it=QUESTIONS[idx];
+  for(let i=0;i<it.opts.length;i++){ const b=document.getElementById("opt"+i); b.disabled=true; if(i===it.ok) b.classList.add("ok"); }
+  const fb=document.getElementById("fb");
+  if(oi===it.ok){ score++; fb.className="feedback ok"; fb.innerHTML="&#9989; ¡Correcto! "+esc(it.exp); }
+  else { document.getElementById("opt"+oi).classList.add("bad"); fb.className="feedback bad"; fb.innerHTML="&#10060; La respuesta correcta es <b>"+String.fromCharCode(65+it.ok)+"</b>. "+esc(it.exp); }
+  const last = idx===total-1;
+  document.getElementById("nextwrap").innerHTML=`<button class="btn" onclick="next()">${last?"Ver resultado &#127942;":"Siguiente &rarr;"}</button>`;
+}
+function next(){ idx++; if(idx<total) renderQ(); else result(); }
+
+function result(){
+  setProgress(100);
+  const passed = score>=Math.ceil(total*0.7);
+  const bySec={};
+  QUESTIONS.forEach((it,i)=>{
+    if(!bySec[it.sec]) bySec[it.sec]={ok:0,tot:0};
+    bySec[it.sec].tot++;
+    if(answersLog[i]===String.fromCharCode(65+it.ok)) bySec[it.sec].ok++;
+  });
+  logToSheets({
+    hoja:"Recepcionista Nocturno",
+    examen:"Examen - Recepcionista Nocturno",
+    nombre:name||"(sin nombre)",
+    punteo:score,
+    total:total,
+    nivel:passed?"Recepcionista Nocturno Certificado":"Recepcionista Nocturno en formacion",
+    respuestas:answersLog
+  });
+  const filled = Math.round(score/total*5);
+  const stars = "⭐".repeat(filled)+"☆".repeat(5-filled);
+  const cls = passed?"score-ok":(score>=Math.ceil(total*0.5)?"score-mid":"score-low");
+  const _msg = `Examen: Recepcionista Nocturno - Hoteles de Petén
+Participante: ${name||"(sin nombre)"}
+Resultado: ${score}/${total} ${stars}
+Nivel: ${passed?"Recepcionista Nocturno Certificado":"Recepcionista Nocturno en formación"}`;
+  const _wa = "https://wa.me/"+WHATSAPP_TO+"?text="+encodeURIComponent(_msg);
+
+  let breakdown="";
+  Object.keys(bySec).forEach(s=>{
+    const b=bySec[s];
+    breakdown+=`<div class="brow"><span>${esc(s)}</span><b>${b.ok}/${b.tot}</b></div>`;
+  });
+  let review="";
+  QUESTIONS.forEach((it,i)=>{
+    const okChar=String.fromCharCode(65+it.ok);
+    const got=answersLog[i];
+    const mark = got===okChar ? "&#9989;" : "&#10060;";
+    review+=`<div class="rev">${mark} <b>${i+1}.</b> ${esc(it.q)}<br><span style="color:var(--green)">&#10003; ${esc(it.opts[it.ok])}</span></div>`;
+  });
+  app.innerHTML=`
+   <div class="card center">
+     <img class="logo-sm" src="${LOGO_SRC}" alt="Hoteles de Petén">
+     <div class="cap">${name?esc(name)+" &middot; ":""}Resultado</div>
+     <div class="big ${cls}">${score} / ${total}</div>
+     <div style="font-size:32px;letter-spacing:5px;margin:2px 0 4px">${stars}</div>
+     <h2>${passed?"&#127769; Recepcionista Nocturno Certificado":"&#127793; Recepcionista Nocturno en formación"}</h2>
+     <p>${passed?"¡Excelente! Tienes el criterio y los conocimientos para cuidar el hotel mientras todos descansan.":"Vas por buen camino. Repasa las respuestas y vuelve a intentarlo: la noche exige responsabilidad y detalle."}</p>
+     <div class="quote">Mientras el hotel duerme, el recepcionista nocturno es sus ojos, su voz y su seguridad.</div>
+     <h3 style="text-align:left">Desglose por área</h3>
+     <div class="breakdown">${breakdown}</div>
+     <a class="btn" style="text-decoration:none;display:inline-block;margin-top:14px" href="${_wa}" target="_blank" rel="noopener">&#128242; Enviar mi resultado por WhatsApp</a>
+     <div style="margin-top:10px"><button class="btn sec" onclick="intro()">Reiniciar para otro participante</button></div>
+     <h3 style="margin-top:18px;text-align:left">Respuestas correctas</h3>
+     <div style="text-align:left">${review}</div>
+   </div>`;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+intro();
+</script>
+</body>
+</html>
